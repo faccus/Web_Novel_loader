@@ -1,3 +1,4 @@
 /html/
 *.epub
 /test.ipynb
+credentials.json
