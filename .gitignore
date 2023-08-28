@@ -2,3 +2,5 @@
 *.epub
 /test.ipynb
 credentials.json
+/.devcontainer
+/__pycache__
