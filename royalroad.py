@@ -125,3 +125,5 @@ class Royalroad:
         epub.write_epub(epub_path, book, {})
 
         return epub_path
+    
+downlaoder = Royalroad('https://www.royalroad.com/fiction/73052/technomagica-progression-fantasy-litrpg').download()
