@@ -26,8 +26,8 @@ class Royalroad:
         return re.sub(r'[-\s]+', '-', value).strip('-_')
 
 
-    def setup(self):
-        directory = 'html'
+    def setup(self, directory='html'):
+              
         if os.path.exists(directory):
             shutil.rmtree(directory)
 
@@ -59,10 +59,12 @@ class Royalroad:
 
         return book
 
-    def save_cover(self, html_page, directory):
+    def save_cover(self, html_page):
         page_cover  = html_page.xpath("//img[@class='thumbnail inline-block']")[0]
         cover_link = page_cover.attrib['src']
-        book_title = html_page.xpath('/html/body/div[3]/div/div/div/div[1]/div/div[1]/div[2]/div/h1')[0].text
+        book_title = self.slugify(html_page.xpath('/html/body/div[3]/div/div/div/div[1]/div/div[1]/div[2]/div/h1')[0].text)
+
+        self.setup(book_title)
 
         actual_cover = requests.get(cover_link, allow_redirects=True)
         extension = actual_cover.headers['Content-type'].split('/')[1]
@@ -71,7 +73,7 @@ class Royalroad:
         with open(cover_path, 'wb') as writer:
             writer.write(actual_cover.content)
         
-        return self.slugify(book_title), extension, cover_path
+        return book_title, extension, cover_path
 
     def read_chapters_and_titles(self, html_page):
         page_chapters = html_page.xpath('/html/body/div[3]/div/div/div/div[1]/div/div[2]/div/div[2]/div[5]/div[2]/table/tbody')[0]
@@ -93,17 +95,11 @@ class Royalroad:
         book.spine.append(chap)
 
     def download(self):
-        directory = 'html'
-        self.setup()
-
         page = requests.get(self.url)
-
-        with open(directory + '/' + 'home.html', 'w', encoding='utf-8') as writer:
-            writer.write(page.text)
-
         html_page = etree.HTML(page.text)
 
-        title, extension, cover_path = self.save_cover(html_page, directory)
+        title, extension, cover_path = self.save_cover(html_page)
+        directory = title
 
 
         titles, chapters = self.read_chapters_and_titles(html_page)
@@ -125,5 +121,3 @@ class Royalroad:
         epub.write_epub(epub_path, book, {})
 
         return epub_path
-    
-downlaoder = Royalroad('https://www.royalroad.com/fiction/73052/technomagica-progression-fantasy-litrpg').download()
