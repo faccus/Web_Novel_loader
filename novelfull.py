@@ -62,13 +62,13 @@ class Novelful:
 
         return book
 
-    def save_cover(self, html_page, directory, novel_title):
+    def save_cover(self, html_page, novel_title):
         page_cover  = html_page.xpath('//img[@alt="' + novel_title + '"]')[0]
         cover_link = 'https://novelfull.com' + page_cover.attrib['src']
 
         actual_cover = requests.get(cover_link, allow_redirects=True)
         extension = actual_cover.headers['Content-type'].split('/')[1]
-        cover_path = directory + '/' + 'cover.' + extension
+        cover_path = novel_title + '/' + 'cover.' + extension
 
         with open(cover_path, 'wb') as writer:
             writer.write(actual_cover.content)
@@ -84,19 +84,16 @@ class Novelful:
         book.add_item(chap)
         book.spine.append(chap)
 
-    def download(self):
-        directory = 'html'
+    def download(self, clear=True):
         self.setup()
 
         page = requests.get(self.url)
 
-        with open(directory + '/' + 'home.html', 'w', encoding='utf-8') as writer:
-            writer.write(page.text)
-
         html_page = etree.HTML(page.text)
-        novel_title = html_page.xpath('/html/body/div/main/div[2]/div[1]/div/div[1]/div[2]/div[1]/div[1]/h3')[0].text.strip('\n').strip()
+        novel_title = self.slugify(html_page.xpath('/html/body/div/main/div[2]/div[1]/div/div[1]/div[2]/div[1]/div[1]/h3')[0].text.strip('\n').strip())
+        directory = novel_title
 
-        extension, cover_path = self.save_cover(html_page, directory, novel_title)
+        extension, cover_path = self.save_cover(html_page, novel_title)
 
         print(novel_title)
 
@@ -132,5 +129,8 @@ class Novelful:
             os.remove(epub_path)
 
         epub.write_epub(epub_path, book, {})
+
+        if clear:
+            shutil.rmtree(directory)
 
         return epub_path

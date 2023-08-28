@@ -68,7 +68,7 @@ class Royalroad:
 
         actual_cover = requests.get(cover_link, allow_redirects=True)
         extension = actual_cover.headers['Content-type'].split('/')[1]
-        cover_path = directory + '/' + 'cover.' + extension
+        cover_path = book_title + '/' + 'cover.' + extension
 
         with open(cover_path, 'wb') as writer:
             writer.write(actual_cover.content)
@@ -94,7 +94,7 @@ class Royalroad:
         book.add_item(chap)
         book.spine.append(chap)
 
-    def download(self):
+    def download(self, clear=True):
         page = requests.get(self.url)
         html_page = etree.HTML(page.text)
 
@@ -119,5 +119,8 @@ class Royalroad:
             os.remove(epub_path)
 
         epub.write_epub(epub_path, book, {})
+
+        if clear:
+            shutil.rmtree(directory)
 
         return epub_path
