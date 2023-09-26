@@ -2,8 +2,13 @@ FROM ubuntu
 
 RUN apt-get update && apt-get install python3-dev python3-pip -y
 
-ADD requirments.txt code/requirments.txt
-RUN python3 -m pip install -r code/requirments.txt
+ADD novelfull.py .
+ADD royalroad.py .
+ADD telegram_bot.py .
 
-ADD novelfull.py code/novelfull.py
-ADD royalroad.py code/royalroad.py
+ADD requirments.txt .
+ADD credentials.json .
+
+RUN python3 -m pip install -r requirments.txt
+
+CMD python3 telegram_bot.py
