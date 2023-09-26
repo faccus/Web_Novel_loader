@@ -4,6 +4,9 @@ from ebooklib import epub
 import unicodedata
 import re
 
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 class Royalroad:
     
     def __init__(self, url):
@@ -35,7 +38,14 @@ class Royalroad:
 
 
     def download_page(self, directory, link, id):
-        request_chapter_html = requests.get(link)
+
+        session = requests.Session()
+        retry = Retry(connect=3, backoff_factor=0.5)
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+
+        request_chapter_html = session.get(link)
         chapter_html = etree.HTML(request_chapter_html.text)
 
         save_directory = directory + '/' + 'ch' + str(id)
@@ -61,7 +71,7 @@ class Royalroad:
             if image.attrib['src'][0] == '/':
                 image.attrib['src'] = 'https://www.royalroad.com' + image.attrib['src'][0]
 
-            actual_image = requests.get(image.attrib['src'], allow_redirects=True)
+            actual_image = session.get(image.attrib['src'], allow_redirects=True)
             extension = actual_image.headers['Content-type'].split('/')[1]
             file_name = str(len(images)) + '.' + extension
             image_path = os.path.join(save_directory, file_name)
