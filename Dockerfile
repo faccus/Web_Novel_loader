@@ -1,6 +1,4 @@
-FROM ubuntu
-
-RUN apt-get update && apt-get install python3-dev python3-pip -y
+FROM python:3
 
 ADD novelfull.py .
 ADD royalroad.py .
