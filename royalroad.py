@@ -37,17 +37,43 @@ class Royalroad:
     def download_page(self, directory, link, id):
         request_chapter_html = requests.get(link)
         chapter_html = etree.HTML(request_chapter_html.text)
+
+        save_directory = directory + '/' + 'ch' + str(id)
         
-        with open(directory + '/' + 'ch' + str(id) + '.html', 'w', encoding='utf-8') as writer:
+        if not os.path.exists(save_directory):
+            os.makedirs(save_directory)
+
+        with open(os.path.join(save_directory, 'content.html'), 'w', encoding='utf-8') as writer:
             writer.write(request_chapter_html.text)
         
         
         page_content = chapter_html.xpath("//div[@class='chapter-inner chapter-content']")[0]
         chap_title = chapter_html.xpath('/html/body/div[3]/div/div/div/div/div[1]/div/div[2]/h1')[0]
-        
+        note_content = chapter_html.xpath("//div[@class='portlet solid author-note-portlet']")
+
+        if len(note_content) > 0:
+            page_content.insert(0, note_content[0])
+
         page_content.insert(0, chap_title)
 
-        return lxml.html.tostring(page_content)
+        images = []
+        for image in page_content.xpath("//div[@class='chapter-inner chapter-content']//img"):
+            if image.attrib['src'][0] == '/':
+                image.attrib['src'] = 'https://www.royalroad.com' + image.attrib['src'][0]
+
+            actual_image = requests.get(image.attrib['src'], allow_redirects=True)
+            extension = actual_image.headers['Content-type'].split('/')[1]
+            file_name = str(len(images)) + '.' + extension
+            image_path = os.path.join(save_directory, file_name)
+            
+            with open(image_path, 'wb') as writer:
+                writer.write(actual_image.content)
+            
+            image.attrib['src'] = 'ch' + str(id) + '/' + file_name
+            images.append((image.attrib['src'], actual_image.headers['Content-type'], image_path))
+        
+
+        return lxml.html.tostring(page_content), images
 
     def prepare_book(self, title, extension, cover_path):
         book = epub.EpubBook()
@@ -85,7 +111,7 @@ class Royalroad:
         
         return titles, chapters
 
-    def add_chapter(self, book, title, content, id):
+    def add_chapter(self, book, title, content, image_info, id):
         chap = epub.EpubHtml(title=title, file_name="chap_" + str(id) + ".xhtml")
         chap.title = title
             
@@ -93,6 +119,13 @@ class Royalroad:
 
         book.add_item(chap)
         book.spine.append(chap)
+
+        print(image_info)
+
+        for image_path, image_type, local_path in image_info:
+            book.add_item(
+                epub.EpubImage(file_name=image_path, media_type='image/gif', content=open(local_path, 'rb').read())
+            )
 
     def download(self, clear=True):
         page = requests.get(self.url)
@@ -110,7 +143,8 @@ class Royalroad:
         for i in range(len(chapters)):
             print(titles[i])
 
-            self.add_chapter(book, titles[i], self.download_page(directory=directory, link=chapters[i], id=i), i)
+            content, image_info = self.download_page(directory=directory, link=chapters[i], id=i)
+            self.add_chapter(book, titles[i], content, image_info, i)
 
 
         epub_path = ''.join(c for c in title + '.epub' if c in ("-_.() %s%s" % (string.ascii_letters, string.digits)))
