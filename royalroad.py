@@ -120,8 +120,6 @@ class Royalroad:
         book.add_item(chap)
         book.spine.append(chap)
 
-        print(image_info)
-
         for image_path, image_type, local_path in image_info:
             book.add_item(
                 epub.EpubImage(file_name=image_path, media_type='image/gif', content=open(local_path, 'rb').read())
