@@ -46,8 +46,8 @@ if __name__ == '__main__':
     credentials = read_credentials()
     application = ApplicationBuilder().token(credentials['token']).build()
     
-    royalroad_handler = CommandHandler('royalroad', royalroad, filters=filters.Chat(credentials['chat_id']))
-    novelfull_handler = CommandHandler('novelfull', novelfull, filters=filters.Chat(credentials['chat_id']))
+    royalroad_handler = CommandHandler('royalroad', royalroad, filters=filters.Chat(int(credentials['chat_id'])))
+    novelfull_handler = CommandHandler('novelfull', novelfull, filters=filters.Chat(int(credentials['chat_id'])))
 
     application.add_handler(royalroad_handler)
     application.add_handler(novelfull_handler)
