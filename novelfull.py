@@ -25,8 +25,7 @@ class Novelful:
         value = re.sub(r'[^\w\s-]', '', value.lower())
         return re.sub(r'[-\s]+', '-', value).strip('-_')
     
-    def setup(self):
-        directory = 'html'
+    def setup(self, directory = 'html'):
         if os.path.exists(directory):
             shutil.rmtree(directory)
 
@@ -62,8 +61,9 @@ class Novelful:
 
         return book
 
-    def save_cover(self, html_page, novel_title):
-        page_cover  = html_page.xpath('//img[@alt="' + novel_title + '"]')[0]
+    def save_cover(self, html_page: etree.HTML, novel_title):
+        page_cover  = html_page.xpath('//div[@class="book"]')[0].getchildren()[0]
+
         cover_link = 'https://novelfull.com' + page_cover.attrib['src']
 
         actual_cover = requests.get(cover_link, allow_redirects=True)
@@ -85,7 +85,6 @@ class Novelful:
         book.spine.append(chap)
 
     def download(self, clear=True):
-        self.setup()
 
         page = requests.get(self.url)
 
@@ -93,6 +92,7 @@ class Novelful:
         novel_title = self.slugify(html_page.xpath('/html/body/div/main/div[2]/div[1]/div/div[1]/div[2]/div[1]/div[1]/h3')[0].text.strip('\n').strip())
         directory = novel_title
 
+        self.setup(directory)
         extension, cover_path = self.save_cover(html_page, novel_title)
 
         print(novel_title)
@@ -134,3 +134,5 @@ class Novelful:
             shutil.rmtree(directory)
 
         return epub_path
+
+Novelful("https://novelfull.com/embers-ad-infinitum.html").download()
